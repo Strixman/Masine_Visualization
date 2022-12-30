@@ -5,11 +5,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Mapbox.Utils;
+using System.Collections.Generic;
 
 public class MQTTClient : MonoBehaviour
 {
     private IMqttClient mqttClient;
     private GameManager gameManager;
+    private List<string> clients = new List<string>();
     void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
@@ -25,12 +27,20 @@ public class MQTTClient : MonoBehaviour
 
         mqttClient.ApplicationMessageReceivedAsync += (MqttApplicationMessageReceivedEventArgs e) =>
         {
+            var (isNewClinet, clientIndex) = GetClientIndex(e.ClientId);
+            if (isNewClinet)
+            {
+                gameManager.AddVehicle(clientIndex);
+            }
+
             string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
 
             string[] payload = message.Split('$');
             Vector2d pos = new Vector2d(double.Parse(payload[1]), double.Parse(payload[2]));
 
-            gameManager.MoveCar(pos, 0);
+            //Debug.Log(e.ClientId + " " + pos);
+            //gameManager.MoveCar(pos, 0);
+            gameManager.UpdateVehicle(clientIndex, pos);
 
             return Task.CompletedTask;
         };
@@ -41,5 +51,18 @@ public class MQTTClient : MonoBehaviour
     private void OnDestroy()
     {
         mqttClient.DisconnectAsync().Wait();
+    }
+
+    private (bool, int) GetClientIndex(string clientName)
+    {
+        for(int i = 0; i < clients.Count; i++)
+        {
+            if (clients[i] == clientName)
+            {
+                return (false, i);
+            }
+        }
+        clients.Add(clientName);
+        return (true, clients.Count - 1);
     }
 }

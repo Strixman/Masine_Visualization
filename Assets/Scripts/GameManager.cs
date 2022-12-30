@@ -1,5 +1,6 @@
 using Mapbox.Unity.Map;
 using Mapbox.Utils;
+using Mapbox.VectorTile.Geometry;
 using System.Collections.Generic;
 using UnityEngine;
 using static GameManager;
@@ -10,9 +11,9 @@ public class GameManager : MonoBehaviour
     public class Car
     {
         public int ID;
-        public Vector2d location;
-        public float speed;
-        public float motorTemperature;
+        public Vector2d location = new Vector2d();
+        public float speed = 0.0f;
+        public float motorTemperature = 0.0f;
         public GameObject obj;
     }
 
@@ -20,31 +21,37 @@ public class GameManager : MonoBehaviour
     public InfoCanvasManager infoCanvas;
     public Transform mainCamera;
 
-    public List<Car> cars = new List<Car>();
+    private List<Car> cars = new List<Car>();
     public Transform carsTransform;
     public GameObject carPrefab;
 
     private Car focusedCar;
+
     void Start()
     {
         infoCanvas.gameObject.SetActive(false);
-
-        foreach (Car car in cars)
-        {
-            car.obj = Instantiate(carPrefab, carsTransform);
-            car.obj.GetComponent<CarManager>().ID = car.ID;
-        }
     }
 
     void Update()
     {
-        lock (positionLock)
+        lock (newCarsLock)
         {
-            while(positions.Count > 0)
+            while(newCars.Count > 0)
             {
-                cars[0].location = positions.Dequeue();
-                break;
+                Car car = new Car
+                {
+                    ID = newCars.Dequeue(),
+                    obj = Instantiate(carPrefab, carsTransform)
+                };
+
+                cars.Add(car);
+                positions.Add(car.location);
             }
+        }
+
+        for (int i = 0; i < cars.Count; i++)
+        {
+            cars[i].location = positions[i];
         }
 
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -99,18 +106,20 @@ public class GameManager : MonoBehaviour
         infoCanvas.gameObject.SetActive(true);
     }
 
-    public void MoveCar(Vector2d newPos, int id)
+    public void UpdateVehicle(int ID, Vector2d location)
     {
-        lock (positionLock)
-        {
-            positions.Enqueue(newPos);
-        }
-        //Debug.Log(newPos);
-        //cars[id].location = newPos;
-        //Debug.Log(map.GeoToWorldPosition(cars[id].location));
-
+        positions[ID] = location;
     }
 
-    private Queue<Vector2d> positions = new Queue<Vector2d>();
-    private readonly object positionLock = new object();
+    public void AddVehicle(int ID)
+    {
+        lock (newCars)
+        {
+            newCars.Enqueue(ID);
+        }
+    }
+
+    private List<Vector2d> positions = new List<Vector2d>(200);
+    private Queue<int> newCars = new Queue<int>();
+    private readonly object newCarsLock = new object();
 }
