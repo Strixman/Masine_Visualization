@@ -27,16 +27,16 @@ public class MQTTClient : MonoBehaviour
 
         mqttClient.ApplicationMessageReceivedAsync += (MqttApplicationMessageReceivedEventArgs e) =>
         {
-            var (isNewClinet, clientIndex) = GetClientIndex(e.ClientId);
+            string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+            string[] payload = message.Split('$');
+
+            var (isNewClinet, clientIndex) = GetClientIndex(payload[0]);
             if (isNewClinet)
             {
                 gameManager.AddVehicle(clientIndex);
             }
 
-            string message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-
-            string[] payload = message.Split('$');
-            Vector2d pos = new Vector2d(double.Parse(payload[1]), double.Parse(payload[2]));
+            Vector2d pos = new Vector2d(double.Parse(payload[2]), double.Parse(payload[3]));
 
             //Debug.Log(e.ClientId + " " + pos);
             //gameManager.MoveCar(pos, 0);
