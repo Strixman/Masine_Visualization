@@ -78,7 +78,7 @@ public class MQTTClient : MonoBehaviour
 
     private void OnDestroy()
     {
-        mqttClient.DisconnectAsync().Wait();
+        if(mqttClient != null) mqttClient.DisconnectAsync().Wait();
     }
 
     private void RemoveClient(string clientName)
