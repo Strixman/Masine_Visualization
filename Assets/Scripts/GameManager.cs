@@ -1,10 +1,15 @@
+using Mapbox.Json;
+using Mapbox.Json.Linq;
 using Mapbox.Unity.Map;
 using Mapbox.Utils;
 using Mapbox.VectorTile.Geometry;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using static GameManager;
@@ -31,6 +36,8 @@ public class GameManager : MonoBehaviour
 
     private List<Car> cars = new List<Car>();
     public Transform carsTransform;
+
+    public GameObject itemPrefeb;
     public GameObject carPrefab;
 
     private Car focusedCar;
@@ -78,6 +85,7 @@ public class GameManager : MonoBehaviour
                 int ID = removeCars.Dequeue();
                 if (focusedCar != null && ID == focusedCar.ID)
                 {
+                    StopAllCoroutines();
                     focusedCar = null;
                     infoCanvas.gameObject.SetActive(false);
                 }
@@ -105,6 +113,7 @@ public class GameManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            StopAllCoroutines();
             focusedCar = null;
             infoCanvas.gameObject.SetActive(false);
         }
@@ -135,6 +144,40 @@ public class GameManager : MonoBehaviour
             mainCamera.transform.position = new Vector3(focusedCar.obj.transform.position.x, mainCamera.transform.position.y, focusedCar.obj.transform.position.z - 100f);
         }
     }
+    IEnumerator GetLastData(string vehicleName)
+    {
+        while (true)
+        {
+            UnityWebRequest uwr = UnityWebRequest.Get($"http://localhost:5000/api/vehicle/speed/{vehicleName}");
+            yield return uwr.SendWebRequest();
+            if (uwr.result != UnityWebRequest.Result.ConnectionError)
+            {
+                foreach (Transform o in infoCanvas.scrollView.transform) {
+                    GameObject.Destroy(o.gameObject);
+                }
+
+                try
+                {
+                    int i = 0;
+                    JObject parsedJson = JObject.Parse(uwr.downloadHandler.text);
+                    foreach (var key in parsedJson[vehicleName]["VehicleSpeed"])
+                    {
+                        float speed = float.Parse((string)key.First.First);
+                        DateTime time = DateTime.Parse(key.ToString().Substring(6, 24));
+                        GameObject obj = Instantiate(itemPrefeb, infoCanvas.scrollView.transform);
+                        var itemManager = obj.GetComponent<ItemManager>();
+                        itemManager.valueText.text = "Speed: " + speed.ToString("0.00") + " km/h";
+                        itemManager.timeText.text = "Time: " + time.ToShortTimeString();
+                        obj.transform.Translate(new Vector3(0, -i * 40, 0));
+                        i++;
+                    }
+                }
+                catch (Exception) {}
+            }
+
+            yield return new WaitForSeconds(1f);
+        }
+    }
 
     public void SetCarFocus(int id, string name)
     {
@@ -152,8 +195,15 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        foreach (Transform o in infoCanvas.scrollView.transform)
+        {
+            GameObject.Destroy(o.gameObject);
+        }
+
         infoCanvas.vehicleNameText.text = name;
         infoCanvas.gameObject.SetActive(true);
+
+        StartCoroutine(GetLastData(name));
     }
 
     public void UpdateLocation(int ID, Vector2d location)

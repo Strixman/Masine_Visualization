@@ -9,4 +9,5 @@ public class InfoCanvasManager : MonoBehaviour
     public Text speedText;
     public Text temperatureText;
     public Text rpmText;
+    public GameObject scrollView;
 }
