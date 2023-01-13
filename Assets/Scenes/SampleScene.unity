@@ -231,7 +231,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _options:
     locationOptions:
-      latitudeLongitude: 46.55389, 15.646002
+      latitudeLongitude: 46.596444, 15.922887
       zoom: 15
     extentOptions:
       extentType: 0

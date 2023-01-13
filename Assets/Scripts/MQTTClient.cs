@@ -28,6 +28,7 @@ public class MQTTClient : MonoBehaviour
                 .WithTopicFilter("VehicleLocation")
                 .WithTopicFilter("VehicleSpeed")
                 .WithTopicFilter("VehicleTemperature")
+                .WithTopicFilter("VehicleRPM")
                 .Build();
             await mqttClient.SubscribeAsync(subOptions);
         };
@@ -64,6 +65,12 @@ public class MQTTClient : MonoBehaviour
                         int index = GetClientIndex(payload[0]);
                         float temperature = float.Parse(payload[2]);
                         gameManager.UpdateTemperature(index, temperature);
+                        break;
+                    }
+                case "VehicleRPM":
+                    {
+                        int index = GetClientIndex(payload[0]);
+                        float rpm = int.Parse(payload[2]);
                         break;
                     }
                 default:
