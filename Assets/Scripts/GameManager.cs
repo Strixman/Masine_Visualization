@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using static GameManager;
 
 public class GameManager : MonoBehaviour
@@ -13,11 +15,15 @@ public class GameManager : MonoBehaviour
     public class Car
     {
         public int ID;
+        public string name;
         public Vector2d location = new Vector2d();
         public float speed = 0.0f;
-        public float motorTemperature = 0.0f;
+        public float temperature = 0.0f;
+        public float rpm = 0.0f;
         public GameObject obj;
     }
+
+    public Button exitButton;
 
     public AbstractMap map;
     public InfoCanvasManager infoCanvas;
@@ -29,6 +35,13 @@ public class GameManager : MonoBehaviour
 
     private Car focusedCar;
 
+    private void Awake()
+    {
+        exitButton.onClick.AddListener(() =>
+        {
+            SceneManager.LoadScene(0);
+        });
+    }
     void Start()
     {
         infoCanvas.gameObject.SetActive(false);
@@ -40,17 +53,21 @@ public class GameManager : MonoBehaviour
         {
             while(newCars.Count > 0)
             {
+                var (id, name) = newCars.Dequeue();
                 Car car = new Car
                 {
-                    ID = newCars.Dequeue(),
+                    ID = id,
+                    name = name,
                     obj = Instantiate(carPrefab, carsTransform)
                 };
 
                 car.obj.GetComponent<CarManager>().ID = car.ID;
+                car.obj.GetComponent<CarManager>().name = car.name;
                 cars.Add(car);
                 positions.Add(car.location);
                 speeds.Add(car.speed);
-                temperatures.Add(car.motorTemperature);
+                temperatures.Add(car.temperature);
+                rpms.Add(car.rpm);
             }
         }
 
@@ -82,7 +99,8 @@ public class GameManager : MonoBehaviour
         {
             cars[i].location = positions[i];
             cars[i].speed = speeds[i];
-            cars[i].motorTemperature = temperatures[i];
+            cars[i].temperature = temperatures[i];
+            cars[i].rpm = rpms[i];
         }
 
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -104,21 +122,21 @@ public class GameManager : MonoBehaviour
 
             car.obj.transform.localScale = scale;
 
-            car.obj.GetComponent<MeshRenderer>().material.color = new Color(car.motorTemperature / 255f, 1, 1); //TODO CHANGE
+            car.obj.GetComponent<MeshRenderer>().material.color = new Color(car.temperature / 255f, 1, 1); //TODO CHANGE
         }
 
         if (focusedCar != null && infoCanvas.isActiveAndEnabled)
         {
-            infoCanvas.speedText.text = "Speed: " + focusedCar.speed.ToString();
-            infoCanvas.motorTemperatureText.text = "Motor Temperature: " + focusedCar.motorTemperature.ToString();
+            infoCanvas.speedText.text = $"{focusedCar.speed} km/h";
+            infoCanvas.temperatureText.text = $"{focusedCar.temperature} °C";
+            infoCanvas.rpmText.text = $"{focusedCar.rpm} rpm";
 
             mainCamera.transform.rotation = Quaternion.Euler(new Vector3(45, 0, 0));
             mainCamera.transform.position = new Vector3(focusedCar.obj.transform.position.x, mainCamera.transform.position.y, focusedCar.obj.transform.position.z - 100f);
         }
-
     }
 
-    public void SetCarFocus(int id)
+    public void SetCarFocus(int id, string name)
     {
         if(focusedCar != null && focusedCar.ID == id)
         {
@@ -134,12 +152,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        infoCanvas.speedText.text = "Speed: " + focusedCar.speed.ToString();
-        infoCanvas.motorTemperatureText.text = "Motor Temperature: " + focusedCar.motorTemperature.ToString();
-
-        mainCamera.transform.rotation = Quaternion.Euler(new Vector3(45,0,0));
-        mainCamera.transform.position = new Vector3(focusedCar.obj.transform.position.x, mainCamera.transform.position.y, focusedCar.obj.transform.position.z - 100f);
-
+        infoCanvas.vehicleNameText.text = name;
         infoCanvas.gameObject.SetActive(true);
     }
 
@@ -167,11 +180,19 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void AddVehicle(int ID)
+    public void UpdateRPM(int ID, float rpm)
+    {
+        for (int i = 0; i < cars.Count; i++)
+        {
+            if (cars[i].ID == ID) rpms[i] = rpm;
+        }
+    }
+
+    public void AddVehicle(int ID, string name)
     {
         lock (newCars)
         {
-            newCars.Enqueue(ID);
+            newCars.Enqueue((ID, name));
         }
     }
 
@@ -186,7 +207,8 @@ public class GameManager : MonoBehaviour
     private List<Vector2d> positions = new List<Vector2d>(200);
     private List<float> speeds = new List<float>(200);
     private List<float> temperatures = new List<float>(200);
-    private Queue<int> newCars = new Queue<int>();
+    private List<float> rpms = new List<float>(200);
+    private Queue<(int, string)> newCars = new Queue<(int,string)>();
     private readonly object newCarsLock = new object();
     private Queue<int> removeCars = new Queue<int>();
     private readonly object removeCarsLock = new object();

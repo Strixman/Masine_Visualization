@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class CarManager : MonoBehaviour
 {
+    public string name;
     public int ID;
     private GameManager gameManager;
 
@@ -14,7 +15,7 @@ public class CarManager : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            gameManager.SetCarFocus(ID);
+            gameManager.SetCarFocus(ID, name);
         }
     }
 }

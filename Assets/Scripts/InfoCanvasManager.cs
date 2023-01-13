@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class InfoCanvasManager : MonoBehaviour
 {
+    public Text vehicleNameText;
     public Text speedText;
-    public Text motorTemperatureText;
+    public Text temperatureText;
+    public Text rpmText;
 }
