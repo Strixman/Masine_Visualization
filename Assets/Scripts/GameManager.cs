@@ -148,7 +148,9 @@ public class GameManager : MonoBehaviour
     {
         while (true)
         {
-            UnityWebRequest uwr = UnityWebRequest.Get($"http://146.212.142.100:5000/api/vehicle/speed/{vehicleName}");
+            UnityWebRequest uwr = UnityWebRequest.Get($"http://localhost:5000/api/vehicle/speed/{vehicleName}");
+            // UnityWebRequest uwr = UnityWebRequest.Get($"http://146.212.142.100:5000/api/vehicle/speed/{vehicleName}");
+
             yield return uwr.SendWebRequest();
             if (uwr.result != UnityWebRequest.Result.ConnectionError)
             {
@@ -168,7 +170,7 @@ public class GameManager : MonoBehaviour
                         var itemManager = obj.GetComponent<ItemManager>();
                         itemManager.valueText.text = "Speed: " + speed.ToString("0.00") + " km/h";
                         itemManager.timeText.text = "Time: " + time.ToShortTimeString();
-                        obj.transform.Translate(new Vector3(0, -i * 5, 0));
+                        obj.transform.Translate(new Vector3(0, -i * 10, 0));
                         i++;
                     }
                 }
