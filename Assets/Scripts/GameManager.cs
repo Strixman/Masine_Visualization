@@ -148,8 +148,7 @@ public class GameManager : MonoBehaviour
     {
         while (true)
         {
-            //UnityWebRequest uwr = UnityWebRequest.Get($"http://localhost:5000/api/vehicle/speed/{vehicleName}");
-            UnityWebRequest uwr = UnityWebRequest.Get($"http://146.212.142.100:5000/api/vehicle/speed/{vehicleName}");
+            UnityWebRequest uwr = UnityWebRequest.Get($"http://localhost:5000/api/vehicle/speed/{vehicleName}");
 
             yield return uwr.SendWebRequest();
             if (uwr.result != UnityWebRequest.Result.ConnectionError)
