@@ -42,12 +42,19 @@ public class GameManager : MonoBehaviour
 
     private Car focusedCar;
 
+    string address = "127.0.0.1";
+
     private void Awake()
     {
         exitButton.onClick.AddListener(() =>
         {
             SceneManager.LoadScene(0);
         });
+
+        string address = PlayerPrefs.GetString("address", "tcp://127.0.0.1:3030");
+        string[] addressPort = address.Remove(0, 6).Split(':');
+        this.address = addressPort[0];
+
     }
     void Start()
     {
@@ -148,7 +155,7 @@ public class GameManager : MonoBehaviour
     {
         while (true)
         {
-            UnityWebRequest uwr = UnityWebRequest.Get($"http://localhost:5000/api/vehicle/speed/{vehicleName}");
+            UnityWebRequest uwr = UnityWebRequest.Get($"http://{address}:5000/api/vehicle/speed/{vehicleName}");
 
             yield return uwr.SendWebRequest();
             if (uwr.result != UnityWebRequest.Result.ConnectionError)
@@ -169,8 +176,9 @@ public class GameManager : MonoBehaviour
                         var itemManager = obj.GetComponent<ItemManager>();
                         itemManager.valueText.text = "Speed: " + speed.ToString("0.00") + " km/h";
                         itemManager.timeText.text = "Time: " + time.ToShortTimeString();
-                        obj.transform.Translate(new Vector3(0, -i * 10, 0));
+                        obj.transform.Translate(new Vector3(0, -i * 11, 0));
                         i++;
+                        if (i >= 5) break;
                     }
                 }
                 catch (Exception) {}
